@@ -1,17 +1,12 @@
 import streamlit as st
 from main import PDFChatbot
-
-# Read credentials from Streamlit sidebar safely (no keys stored in repo)
-AZURE_OPENAI_ENDPOINT = st.sidebar.text_input("Azure Endpoint")
-AZURE_OPENAI_API_KEY = st.sidebar.text_input("Azure API Key", type="password")
-AZURE_OPENAI_API_VERSION = st.sidebar.text_input("API Version", value="2025-01-01-preview")
-AZURE_OPENAI_DEPLOYMENT = st.sidebar.text_input("Deployment Name", value="gpt-4.1-mini")
-
-
-
-# Styled Chat Message
+ 
+# ---------------------------------------------------------
+# Styled Chat Message Component
+# ---------------------------------------------------------
 def message_box(text, sender="assistant"):
-    text = text.replace("\n", "<br>")  
+    text = text.replace("\n", "<br>")
+    
     if sender == "assistant":
         st.markdown(
             f"""
@@ -21,7 +16,6 @@ def message_box(text, sender="assistant"):
             """,
             unsafe_allow_html=True
         )
-
     else:
         st.markdown(
             f"""
@@ -37,12 +31,16 @@ def message_box(text, sender="assistant"):
             """,
             unsafe_allow_html=True
         )
-
-
+ 
+ 
+# ---------------------------------------------------------
+# Main UI Function
+# ---------------------------------------------------------
 def render_ui():
-
+ 
     st.set_page_config(page_title="Chatbot", layout="wide")
-
+ 
+    # Header
     st.markdown(
         """
         <div style="
@@ -56,30 +54,62 @@ def render_ui():
         """,
         unsafe_allow_html=True,
     )
-
-
-
-    # Load chatbot once
+ 
+    # ---------------------------------------------------------
+    # USER INPUTS (SAFE) - NOW PROPERLY INSIDE render_ui()
+    # ---------------------------------------------------------
+    st.sidebar.header("🔐 Azure OpenAI Settings")
+ 
+    AZURE_OPENAI_ENDPOINT = st.sidebar.text_input(
+        "Azure OpenAI Endpoint",
+        placeholder="https://your-endpoint.openai.azure.com/"
+    )
+ 
+    AZURE_OPENAI_API_KEY = st.sidebar.text_input(
+        "Azure OpenAI API Key",
+        type="password",
+        placeholder="Enter your Azure API Key"
+    )
+ 
+    AZURE_OPENAI_API_VERSION = st.sidebar.text_input(
+        "Azure OpenAI API Version",
+        value="2024-02-15-preview"      # recommended stable version
+    )
+ 
+    AZURE_OPENAI_DEPLOYMENT = st.sidebar.text_input(
+        "Azure Deployment Name",
+        value="gpt-4.1-mini"
+    )
+ 
+    # Validate credentials
+    if not (AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY):
+        st.warning("⚠️ Please enter Azure Endpoint and API Key in the sidebar.")
+        return
+ 
+    # ---------------------------------------------------------
+    # Load chatbot (only once)
+    # ---------------------------------------------------------
     if "chatbot" not in st.session_state:
         st.session_state.chatbot = PDFChatbot("INTRODUCTION TO LOAN AGAINST PROPERTY.pdf")
-
-    # Chat history
+ 
+    # Chat History
     if "messages" not in st.session_state:
         st.session_state.messages = []
-
-    # Display past messages with styled bubbles
+ 
+    # Display previous messages
     for msg in st.session_state.messages:
         message_box(msg["content"], sender=msg["role"])
-
-    # User input
+ 
+    # ---------------------------------------------------------
+    # User Input Section
+    # ---------------------------------------------------------
     user_input = st.chat_input("Ask something from the PDF…")
-
+ 
     if user_input:
-        # Save + display user message
         st.session_state.messages.append({"role": "user", "content": user_input})
         message_box(user_input, sender="user")
-
-        # Bot answer
+ 
+        # Get chatbot response
         answer = st.session_state.chatbot.ask(
             user_input,
             AZURE_OPENAI_API_KEY,
@@ -87,6 +117,6 @@ def render_ui():
             AZURE_OPENAI_API_VERSION,
             AZURE_OPENAI_DEPLOYMENT
         )
-
+ 
         st.session_state.messages.append({"role": "assistant", "content": answer})
         message_box(answer, sender="assistant")
