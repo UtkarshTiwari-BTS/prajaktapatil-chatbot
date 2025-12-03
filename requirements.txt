@@ -1,0 +1,11 @@
+streamlit
+PyPDF2
+faiss-cpu
+openai
+langchain
+tiktoken
+numpy
+pandas
+joblib
+scikit-learn
+scipy
